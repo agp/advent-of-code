@@ -54,31 +54,76 @@ function gridCharLineCombos(gridCharsInput: GridChars) {
 
 const combos: Map<string, Array<Array<Point>>> = gridCharLineCombos(gridChars);
 
-const gridCopy = structuredClone(grid);
-const antiNodes: Point[] = [];
+function nodeExists(antiNodeList: Point[], p: Point) {
+  const exists = antiNodeList.some(
+    (point) => p.x === point.x && p.y === point.y
+  );
+  return exists;
+}
 // iterate each character points array lines
-for (const [char, pointsArray] of combos) {
-  for (const [a, b] of pointsArray) {
-    // const slope = (b.y - a.y) / (b.x - a.x);
-    // const length = Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
-    // console.log(slope);
-    // console.log(length);
-    const changeA = { x: a.x - b.x, y: a.y - b.y };
-    const newPointA = { x: a.x + changeA.x, y: a.y + changeA.y };
-    const changeB = { x: b.x - a.x, y: b.y - a.y };
-    const newPointB = {x: b.x + changeB.x, y: b.y + changeB.y}
-    for (const p of [newPointA, newPointB]) {
-      if (checkBounds(grid, p)) {
-        const exists = antiNodes.some((point) => p.x === point.x && p.y === point.y)
-        if (!exists) {
-          antiNodes.push(p)
+function getAllAntiNodes(gridCopy: Grid, harmonics: boolean = false) {
+  const antiNodes: Point[] = [];
+  for (const [char, pointsArray] of combos) {
+    for (const line of pointsArray) {
+      if (harmonics) {
+        for (const antenna of line) {
+          if (!nodeExists(antiNodes, antenna)) {
+            antiNodes.push({ x: antenna.x, y: antenna.y });
+          }
         }
-        const currGridChar = gridCopy[p.y][p.x]
-        gridCopy[p.y][p.x] = currGridChar === "." ? "#" : currGridChar
+      }
+      const newAntiNodes = getAntiNodesFromLine(line, harmonics);
+      for (const p of newAntiNodes) {
+        if (checkBounds(grid, p)) {
+          if (!nodeExists(antiNodes, p)) {
+            antiNodes.push(p);
+          }
+          const currGridChar = gridCopy[p.y][p.x];
+          gridCopy[p.y][p.x] = currGridChar === "." ? "#" : currGridChar;
+        }
       }
     }
   }
+  return { grid: gridCopy, nodes: antiNodes };
 }
-printGrid(gridCopy);
-console.log(antiNodes.length);
+const part1antiNodes = getAllAntiNodes(structuredClone(grid));
+// printGrid(part1antiNodes.grid);
+console.log(part1antiNodes.nodes.length);
 
+// part 2
+
+function getAntiNodesFromLine(segment: Point[], harmonics: boolean = false) {
+  const newNodes: Point[] = [];
+  const [a, b] = segment;
+  const changeA = { x: a.x - b.x, y: a.y - b.y };
+  const newPointA = { x: a.x + changeA.x, y: a.y + changeA.y };
+  const changeB = { x: b.x - a.x, y: b.y - a.y };
+  const newPointB = { x: b.x + changeB.x, y: b.y + changeB.y };
+  newNodes.push(newPointA, newPointB);
+  if (harmonics) {
+    const newANodes = extendHarmonic(changeA, newPointA);
+    newNodes.push(...newANodes);
+    const newBNodes = extendHarmonic(changeB, newPointB);
+    newNodes.push(...newBNodes);
+  }
+  return newNodes;
+}
+
+function extendHarmonic(change: Point, point: Point) {
+  const nodes: Point[] = [];
+  let inBounds = true;
+  let currPoint = point;
+  while (inBounds) {
+    const nextPoint = { x: currPoint.x + change.x, y: currPoint.y + change.y };
+    inBounds = checkBounds(grid, nextPoint);
+    if (inBounds) {
+      nodes.push(nextPoint);
+      currPoint = nextPoint;
+    }
+  }
+  return nodes;
+}
+
+const part2AntiNodes = getAllAntiNodes(structuredClone(grid), true);
+console.log(part2AntiNodes.nodes.length);
+// printGrid(part2AntiNodes.grid);
