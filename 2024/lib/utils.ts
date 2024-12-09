@@ -8,7 +8,7 @@ export type Grid = string[][];
 export function printGrid(gridToPrint: Grid) {
   let output = "";
   gridToPrint.forEach((line) => {
-    output += line.toString().replaceAll(",", "");
+    output += line.join("");
     output += "\n";
   });
   console.log(output);
