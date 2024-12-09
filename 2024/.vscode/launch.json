@@ -14,7 +14,8 @@
             "runtimeArgs": [
                 "--nolazy",
                 "-r",
-                "ts-node/register"
+                "ts-node/register",
+                "--stack-size=10000"
             ],
             "sourceMaps": true,
             "cwd": "${workspaceRoot}",
