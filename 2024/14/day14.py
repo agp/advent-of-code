@@ -18,23 +18,15 @@ for bot in input:
 
 
 def render_grid(bots: list[dict]) -> None:
-    rows = []
-    for y in range(bounds["row"]):
-        cells = []
-        for x in range(bounds["col"]):
-            cell = 0
-            for b in bots:
-                at_xy = b["p"] == np.array([x, y])
-                if at_xy.all():
-                    cell += 1
-            cells.append(cell)
-        rows.append(cells)
-    # print("  "+"".join([str(i) for i, c in enumerate(rows[0])]))
-    # print("  " + "".join(["-" for c in enumerate(rows[0])]))
-    for i, r in enumerate(rows):
-        print(f"{i}|" + "".join([str(cell if cell else ".") for cell in r]))
-
-
+    space = {f"{x},{y}": 0 for y in range(bounds["row"]) for x in range(bounds["col"])}
+    for b in bots:
+        x, y = b["p"]
+        space[f"{x},{y}"] += 1
+    space_values = np.array(list(space.values()))
+    split = np.array_split(space_values, bounds["row"])
+    for row in split:
+        print("".join([f"\033[32;1m{cell}\033[0m" if cell else "." for cell in row]))
+    
 def move_bot(bot: dict) -> None:
     bot["p"] = bot["p"] + bot["v"]
     x = bot["p"][0]
@@ -71,9 +63,28 @@ def get_safety_factor(bots: list[dict]) -> int:
     return np.prod(list(d.values()))
 
 
+bots1 = bots.copy()
 for i in range(100):
-    for b in bots:
+    for b in bots1:
         move_bot(b)
 
-safety = get_safety_factor(bots)
+safety = get_safety_factor(bots1)
 print(safety)
+
+bots2 = bots.copy()
+i = 0
+min_safety = np.inf
+
+while(True):
+    for b in bots2:
+        move_bot(b)
+    i += 1
+    safety = get_safety_factor(bots2)
+    if safety < min_safety:
+        min_safety = safety
+        print("***************************************")
+        print(f"{i} seconds")
+        render_grid(bots2)
+        print("***************************************")
+    
+    
