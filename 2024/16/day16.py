@@ -23,6 +23,7 @@ class Maze:
         self.visited = defaultdict(lambda: False)
         self.costs = defaultdict(lambda: np.inf)
         self.min_score = np.inf
+        self.best_paths = []
 
     def print(self) -> None:
         split = np.array_split([v for v in self.grid.values()], self.rows)
@@ -45,20 +46,23 @@ class Maze:
         start_dir = (1, 0)
         self.visited[(self.start, start_dir)] = True
         pq = [
-            (0, count := 0, self.start, np.array(start_dir))
-        ]  # cost, count, node, current_dir - need a count to ensure no duplicate entries
+            (0, count := 0, self.start, np.array(start_dir), [self.start])
+        ]  # cost, count, node, current_dir, path - need a count to ensure no duplicate entries
         while pq:
             # pop lowest node from priority queue
-            score, _, node, dir = heapq.heappop(pq)
+            score, _, node, dir, path = heapq.heappop(pq)
             dir_tup = tuple(dir.tolist())
             # set node visited direction and cost. since cost check is done before adding to queue it will always be the lowest
-            self.visited[(node, dir_tup)] = True
-            self.costs[node] = score
             # self.grid[node] = self.moves[dir_tup]
             # self.print()
+            self.visited[(node, dir_tup)] = True
+            self.costs[node] = score
+            # path.append(node)
+
             if node == self.end:
-                if score < self.min_score:
+                if score <= self.min_score:
                     self.min_score = score
+                    self.best_paths.append(path)
             # continue when score is already greater than a found min score
             if score > self.min_score:
                 continue
@@ -77,7 +81,10 @@ class Maze:
                         and cost > self.costs[neighbor]
                     ):
                         continue
-                    heapq.heappush(pq, (cost, count := count + 1, neighbor, move))
+                    heapq.heappush(
+                        pq,
+                        (cost, count := count + 1, neighbor, move, path + [neighbor]),
+                    )
 
 
 maze = Maze(input_rows)
@@ -85,6 +92,8 @@ maze = Maze(input_rows)
 
 start_time = time.time()
 maze.dijkstra()
-print(maze.min_score)
+print(f"min score:{maze.min_score}")
+tiles = len({node for path in maze.best_paths for node in path})
+print(f"tiles: {tiles}")
 end_time = time.time()
 print(f"time to run: {end_time-start_time}s")
